@@ -53,7 +53,8 @@
 <body onload="initialize();"
       ondragstart="return false;" onselectstart="return false;"
       ondragenter="return false;" ondragover="return false;"
-      ondrop="return false;" oncontextmenu="return false;">
+      ondrop="return false;" oncontextmenu="return false;"
+        onmousemove="checkKeys(event);">
 <div id="error"></div>
 <div id="map"></div>
 <div id="directions"></div>
@@ -120,12 +121,47 @@
        callJava("callback-port/" + callbackListenerPort);
    }
 
+   var multimove = false;
+   var shiftKey = false;
+   var altKey = false;
+   var ctrlKey = false;
+
    function addListener(marker) {
        google.maps.event.addListener(marker, "dragend", function() {
            var position = marker.getPosition();
            var index = marker.index_;
+
+           if (multimove) {
+               alert("you pressed one of the 'Alt+Shift'");
+           }
+           else {
+               if (shiftKey) {
+                   alert("you pressed 'Shift'");
+               }
+               if (altKey) {
+                   alert("you pressed 'Alt'");
+               }
+               if (ctrlKey) {
+                   alert("you pressed 'Ctrl'");
+               }
+           }
+
            callJava("move-position/" + index + "/" + position.lat() + "/" + position.lng());
        });
+   }
+
+   function checkKeys(event) {
+       var evtobj=window.event? event : e;
+       if (evtobj.altKey && /*evtobj.ctrlKey ||*/ evtobj.shiftKey) {
+           multimove = true;
+       }
+       else {
+           multimove = false;
+       }
+
+       altKey = evtobj.altKey;
+       ctrlKey = evtobj.ctrlKey;
+       shiftKey = evtobj.shiftKey;
    }
 
    var oldMarkers = new Array();
