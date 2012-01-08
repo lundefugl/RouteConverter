@@ -29,6 +29,7 @@ import slash.navigation.converter.gui.models.CharacteristicsModel;
 import slash.navigation.converter.gui.models.PositionColumns;
 import slash.navigation.converter.gui.models.PositionsModel;
 import slash.navigation.converter.gui.models.PositionsSelectionModel;
+import slash.navigation.gpx.GpxPosition;
 import slash.navigation.nmn.NavigatingPoiWarnerFormat;
 import slash.navigation.util.Positions;
 
@@ -1259,7 +1260,7 @@ public abstract class BaseMapView implements MapView {
     private static final Pattern DIRECTIONS_LOAD_PATTERN = Pattern.compile("^load/(\\d*)/(\\d*)$");
     private static final Pattern ADD_POSITION_PATTERN = Pattern.compile("^add-position/(.*)/(.*)$");
     private static final Pattern INSERT_POSITION_PATTERN = Pattern.compile("^insert-position/(.*)/(.*)/(.*)$");
-    private static final Pattern MOVE_POSITION_PATTERN = Pattern.compile("^move-position/(.*)/(.*)/(.*)$");
+    private static final Pattern MOVE_POSITION_PATTERN = Pattern.compile("^move-position/(.*)/(.*)/(.*)/(.*)$");
     private static final Pattern DELETE_POSITION_PATTERN = Pattern.compile("^delete-position/(.*)/(.*)/(.*)$");
     private static final Pattern SELECT_POSITION_PATTERN = Pattern.compile("^select-position/(.*)/(.*)/(.*)/(.*)$");
     private static final Pattern SELECT_POSITIONS_PATTERN = Pattern.compile("^select-positions/(.*)/(.*)/(.*)/(.*)/(.*)");
@@ -1309,9 +1310,12 @@ public abstract class BaseMapView implements MapView {
             final int row = getMoveRow(parseInt(movePositionMatcher.group(1)));
             final Double latitude = parseDouble(movePositionMatcher.group(2));
             final Double longitude = parseDouble(movePositionMatcher.group(3));
+
+            final boolean multimove = "multi".equals(movePositionMatcher.group(4));
+
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    movePosition(row, longitude, latitude);
+                    movePosition(row, longitude, latitude, multimove);
                 }
             });
             return true;
@@ -1554,9 +1558,35 @@ public abstract class BaseMapView implements MapView {
         return row;
     }
 
-    private void movePosition(int row, Double longitude, Double latitude) {
+    private void movePosition(int row, Double longitude, Double latitude, boolean multimove) {
+
+        if (multimove) {
+            final GpxPosition refPosition = (GpxPosition) positionsModel.getValueAt(row, LONGITUDE_COLUMN_INDEX);
+            final Double diffLongitude = refPosition != null ? longitude-refPosition.getLongitude() : 0.;
+            final Double diffLatitude = refPosition != null ? latitude-refPosition.getLatitude() : 0.;
+
+            for (int selRow : selectedPositionIndices) {
+                if (selRow != row) {
+
+                    GpxPosition rowPos = (GpxPosition) positionsModel.getValueAt(selRow, LONGITUDE_COLUMN_INDEX);
+                    if (rowPos != null) {
+                        positionsModel.edit(rowPos.getLongitude() + diffLongitude, selRow, LONGITUDE_COLUMN_INDEX, false, true);
+                        positionsModel.edit(rowPos.getLatitude() + diffLatitude, selRow, LATITUDE_COLUMN_INDEX, false, true);
+                    }
+
+                    if (preferences.getBoolean(CLEAN_ELEVATION_ON_MOVE_PREFERENCE, false))
+                        positionsModel.edit(null, selRow, ELEVATION_COLUMN_INDEX, false, false);
+                    if (preferences.getBoolean(CLEAN_TIME_ON_MOVE_PREFERENCE, false))
+                        positionsModel.edit(null, selRow, TIME_COLUMN_INDEX, false, false);
+                    if (preferences.getBoolean(COMPLEMENT_TIME_ON_MOVE_PREFERENCE, false))
+                        positionAugmenter.complementTime(selRow, null);
+                }
+            }
+        }
+
         positionsModel.edit(longitude, row, LONGITUDE_COLUMN_INDEX, false, true);
         positionsModel.edit(latitude, row, LATITUDE_COLUMN_INDEX, false, true);
+
         if (preferences.getBoolean(CLEAN_ELEVATION_ON_MOVE_PREFERENCE, false))
             positionsModel.edit(null, row, ELEVATION_COLUMN_INDEX, false, false);
         if (preferences.getBoolean(CLEAN_TIME_ON_MOVE_PREFERENCE, false))
@@ -1575,7 +1605,7 @@ public abstract class BaseMapView implements MapView {
             haveToRepaintSelectionImmediately = true;
             selectionUpdateReason = "move position";
         }
-        positionsModel.fireTableRowsUpdated(row, size, ALL_COLUMNS);
+        positionsModel.fireTableRowsUpdated(multimove ? 0 : row, size, ALL_COLUMNS);
     }
 
     private void selectPosition(Double longitude, Double latitude, Double threshold, boolean replaceSelection) {
