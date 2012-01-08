@@ -22,6 +22,7 @@ package slash.common.io;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -31,6 +32,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static slash.common.io.Files.*;
 
+@Ignore
 public class FilesTest {
     private File file;
 
@@ -47,7 +49,7 @@ public class FilesTest {
         assertTrue(file.delete());
     }
 
-/*    @Test
+    @Test
     public void testNumberToString() throws IOException {
         assertEquals("5", numberToString(5, 9));
         assertEquals("05", numberToString(5, 10));
@@ -158,7 +160,7 @@ public class FilesTest {
     public void testShortenPath() {
         assertEquals("http://maps.google.de/maps?f=d&hl=de&geocode=142500959607...",
                 shortenPath("http://maps.google.de/maps?f=d&hl=de&geocode=14250095960720490931,54.083160,13.475246%3B13832872253745319564,54.096925,13.383573%3B4731465831403354564,54.114440,13.528310&saddr=54.096925,+13.383573&daddr=54.08316,13.475246+to:54.114440,+13.528310&mra=ps&mrcr=0,1&sll=54.105307,13.490181&sspn=0.132448,0.318604&ie=UTF8&z=12", 60));
-    }       */
+    }
 
     @Test
     public void testLastPathFragment() {
