@@ -1561,14 +1561,14 @@ public abstract class BaseMapView implements MapView {
     private void movePosition(int row, Double longitude, Double latitude, boolean multimove) {
 
         if (multimove) {
-            final GpxPosition refPosition = (GpxPosition) positionsModel.getValueAt(row, LONGITUDE_COLUMN_INDEX);
+            final BaseNavigationPosition refPosition = (BaseNavigationPosition) positionsModel.getValueAt(row, LONGITUDE_COLUMN_INDEX);
             final Double diffLongitude = refPosition != null ? longitude-refPosition.getLongitude() : 0.;
             final Double diffLatitude = refPosition != null ? latitude-refPosition.getLatitude() : 0.;
 
             for (int selRow : selectedPositionIndices) {
                 if (selRow != row) {
 
-                    GpxPosition rowPos = (GpxPosition) positionsModel.getValueAt(selRow, LONGITUDE_COLUMN_INDEX);
+                    BaseNavigationPosition rowPos = (BaseNavigationPosition) positionsModel.getValueAt(selRow, LONGITUDE_COLUMN_INDEX);
                     if (rowPos != null) {
                         positionsModel.edit(rowPos.getLongitude() + diffLongitude, selRow, LONGITUDE_COLUMN_INDEX, false, true);
                         positionsModel.edit(rowPos.getLatitude() + diffLatitude, selRow, LATITUDE_COLUMN_INDEX, false, true);
